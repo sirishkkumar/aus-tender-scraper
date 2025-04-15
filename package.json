@@ -4,7 +4,8 @@
   "description": "Automated scraper for AusTender listings using Playwright",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "postinstall": "npx playwright install"
   },
   "dependencies": {
     "playwright": "^1.43.1"
