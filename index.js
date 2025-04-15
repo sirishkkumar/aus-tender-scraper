@@ -12,25 +12,38 @@ const fs = require('fs');
       timeout: 60000
     });
 
-    await page.waitForSelector('.search-results a.atm-title', { timeout: 20000 });
-    console.log('✅ Page loaded');
+    // 👇 Manually trigger the search to load results
+    const searchBtn = await page.$('button:has-text("Search")');
+    if (searchBtn) {
+      await searchBtn.click();
+      console.log('🔍 Clicked Search button to load results...');
+    } else {
+      throw new Error('❌ Search button not found.');
+    }
 
-    const tenders = await page.$$eval('.search-results a.atm-title', (links) => {
+    // ✅ Wait for search results to load
+    await page.waitForSelector('article h3 a', { timeout: 20000 });
+
+    // ✅ Extract tender titles and URLs
+    const tenders = await page.$$eval('article h3 a', (links) => {
       return links.map(link => ({
         title: link.textContent.trim(),
         url: link.href
       }));
     });
 
-    console.log(`🔗 Found ${tenders.length} tenders`);
+    console.log(`📦 Extracted ${tenders.length} tenders`);
+    console.log('🔹 Sample:', tenders[0]);
 
+    // Save to file
     fs.writeFileSync('tenders.json', JSON.stringify(tenders, null, 2));
     console.log('✅ Saved all tenders to tenders.json');
+
     await browser.close();
     process.exit(0);
 
   } catch (err) {
-    console.error('❌ Error occurred:', err);
+    console.error('❌ Error occurred:', err.message);
     await browser.close();
     process.exit(1);
   }
