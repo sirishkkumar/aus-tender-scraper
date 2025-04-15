@@ -6,14 +6,16 @@ const fs = require('fs');
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
-    // Go to AusTender ATM Search Page for Category 43
+    // Go to AusTender Category 43 Search
     await page.goto('https://www.tenders.gov.au/Search/AtmAdvancedSearch?Category=43', {
       waitUntil: 'domcontentloaded',
     });
 
+    // ✅ Wait for the tender list to fully appear
+    await page.waitForSelector('.search-results a.atm-title', { timeout: 15000 });
     console.log('✅ Page loaded');
 
-    // ✅ Correct selector to get all tender detail page links
+    // ✅ Get all tender URLs
     const tenderLinks = await page.$$eval('.search-results a.atm-title', links =>
       links.map(link => link.href)
     );
@@ -22,8 +24,7 @@ const fs = require('fs');
 
     const tenders = [];
 
-    // Limit to first 5 for testing
-    for (const url of tenderLinks.slice(0, 5)) {
+    for (const url of tenderLinks.slice(0, 5)) { // Only scrape 5 tenders for now
       const tenderPage = await browser.newPage();
       await tenderPage.goto(url, { waitUntil: 'domcontentloaded' });
 
@@ -49,14 +50,16 @@ const fs = require('fs');
       await tenderPage.close();
     }
 
-    // Save to file
-    fs.writeFileSync('tenders.json', JSON.stringify(tenders, null, 2));
+    // Save to file (and print it in logs)
+    const json = JSON.stringify(tenders, null, 2);
+    fs.writeFileSync('tenders.json', json);
+    console.log('📦 Final JSON:\n', json);
     console.log('✅ Saved all tenders to tenders.json');
 
     await browser.close();
-    process.exit(0); // ✅ Success
+    process.exit(0); // ✅ Done
   } catch (err) {
     console.error('❌ Error:', err);
-    process.exit(1); // ❌ Failure
+    process.exit(1);
   }
 })();
