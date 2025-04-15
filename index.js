@@ -6,15 +6,15 @@ const fs = require('fs');
     const browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
 
-    // Go to Advanced Search - ATM page
+    // Go to AusTender ATM Search Page for Category 43
     await page.goto('https://www.tenders.gov.au/Search/AtmAdvancedSearch?Category=43', {
       waitUntil: 'domcontentloaded',
     });
 
     console.log('✅ Page loaded');
 
-    // Step 1: Grab links to each tender
-    const tenderLinks = await page.$$eval('a[href*="/Advert/Show"]', links =>
+    // ✅ Correct selector to get all tender detail page links
+    const tenderLinks = await page.$$eval('.search-results a.atm-title', links =>
       links.map(link => link.href)
     );
 
@@ -22,7 +22,8 @@ const fs = require('fs');
 
     const tenders = [];
 
-    for (const url of tenderLinks.slice(0, 5)) { // Limit to 5 for testing
+    // Limit to first 5 for testing
+    for (const url of tenderLinks.slice(0, 5)) {
       const tenderPage = await browser.newPage();
       await tenderPage.goto(url, { waitUntil: 'domcontentloaded' });
 
