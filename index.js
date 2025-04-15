@@ -12,30 +12,35 @@ const fs = require('fs');
       timeout: 60000
     });
 
-    // 👇 Manually trigger the search to load results
-    const searchBtn = await page.$('button:has-text("Search")');
-    if (searchBtn) {
-      await searchBtn.click();
-      console.log('🔍 Clicked Search button to load results...');
-    } else {
-      throw new Error('❌ Search button not found.');
+    // 🔍 Find and click the search button manually
+    const buttons = await page.$$('button');
+    let searchClicked = false;
+
+    for (const btn of buttons) {
+      const text = await btn.innerText();
+      if (text.includes('Search')) {
+        await btn.click();
+        console.log('🔍 Search button clicked');
+        searchClicked = true;
+        break;
+      }
     }
 
-    // ✅ Wait for search results to load
-    await page.waitForSelector('article h3 a', { timeout: 20000 });
+    if (!searchClicked) throw new Error('❌ Could not find the Search button');
 
-    // ✅ Extract tender titles and URLs
-    const tenders = await page.$$eval('article h3 a', (links) => {
-      return links.map(link => ({
+    // ⏳ Wait for tender result links to appear
+    await page.waitForSelector('article h3 a', { timeout: 20000 });
+    console.log('✅ Tender list loaded');
+
+    // 🔗 Extract links
+    const tenders = await page.$$eval('article h3 a', (links) =>
+      links.map(link => ({
         title: link.textContent.trim(),
         url: link.href
-      }));
-    });
+      }))
+    );
 
-    console.log(`📦 Extracted ${tenders.length} tenders`);
-    console.log('🔹 Sample:', tenders[0]);
-
-    // Save to file
+    console.log(`📦 Found ${tenders.length} tenders`);
     fs.writeFileSync('tenders.json', JSON.stringify(tenders, null, 2));
     console.log('✅ Saved all tenders to tenders.json');
 
